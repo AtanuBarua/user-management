@@ -17,7 +17,7 @@ class UsersController extends Controller
 
     public function index()
     {
-        $data['users'] = (new UserService())->getUsers();
+        $data['users'] = $this->user_service->getUsers();
         $data['heading'] = 'Dashboard';
         return view('users.dashboard', $data);
     }
@@ -61,13 +61,9 @@ class UsersController extends Controller
         ]);
 
         try {
-            $alert = $this->user_service->unknownErrorAlert();
-            $user = $this->user_service->createUser($request->all());
-
-            if ($user) {
-                $alert = $this->user_service->storeUserSuccessAlert();
-            }
+            $alert = $this->user_service->createUser($request->all());
         } catch (\Throwable $th) {
+            $alert = $this->user_service->unknownErrorAlert();
             $this->user_service->logForException($th, 'STORE_USER');
         }
 
@@ -82,14 +78,9 @@ class UsersController extends Controller
         ]);
 
         try {
-            $alert = $this->user_service->unknownErrorAlert();
-            $user = $this->user_service->findUser($request->id);
-
-            $status = $this->user_service->updateUser($request->all(), $user);
-            if ($status) {
-                $alert = $this->user_service->updateUserSuccessAlert();
-            }
+            $alert = $this->user_service->updateUser($request->all(), $request->id);
         } catch (\Throwable $th) {
+            $alert = $this->user_service->unknownErrorAlert();
             $this->user_service->logForException($th, 'UPDATE_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
@@ -98,14 +89,9 @@ class UsersController extends Controller
     public function trash($id)
     {
         try {
-            $user = (new UserService())->findUser($id);
-            $alert = $this->user_service->unknownErrorAlert();
-
-            $status = $this->user_service->trashUser($user);
-            if ($status) {
-                $alert = $this->user_service->trashUserSuccessAlert();
-            }
+            $alert = $this->user_service->trashUser($id);
         } catch (\Throwable $th) {
+            $alert = $this->user_service->unknownErrorAlert();
             $this->user_service->logForException($th, 'TRASH_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
@@ -125,15 +111,9 @@ class UsersController extends Controller
     public function delete($id)
     {
         try {
-            $user = $this->user_service->findTrashedUser($id);
-            $alert = $this->user_service->unknownErrorAlert();
-
-            $status = $this->user_service->forceDeleteUser($user);
-            if ($status) {
-                $alert = $this->user_service->deleteUserSuccessAlert();
-            }
-
+            $alert = $this->user_service->forceDeleteUser($id);
         } catch (\Throwable $th) {
+            $alert = $this->user_service->unknownErrorAlert();
             $this->user_service->logForException($th, 'DELETE_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
@@ -142,15 +122,9 @@ class UsersController extends Controller
     public function restore($id)
     {
         try {
-            $alert = $this->user_service->unknownErrorAlert();
-            $user = $this->user_service->findTrashedUser($id);
-
-            $status = $this->user_service->restoreUser($user);
-            if ($status) {
-                $alert = $this->user_service->restoreUserSuccessAlert();
-            }
-
+            $alert = $this->user_service->restoreUser($id);
         } catch (\Throwable $th) {
+            $alert = $this->user_service->unknownErrorAlert();
             $this->user_service->logForException($th, 'RESTORE_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);

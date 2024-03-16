@@ -27,7 +27,13 @@ class UserService
     public function createUser($request)
     {
         $data = $this->prepareStoreData($request);
-        return User::create($data);
+        $status = User::create($data);
+        if ($status) {
+            $alert = $this->storeUserSuccessAlert();
+        } else {
+            $alert = $this->unknownErrorAlert();
+        }
+        return $alert;
     }
 
     public function prepareStoreData($request)
@@ -48,17 +54,34 @@ class UserService
         ]);
     }
 
-    public function updateUser($request, $user)
+    public function updateUser($request, $id)
     {
-        return $user->update([
+        $user = $this->findUser($id);
+
+        $status = $user->update([
             'name' => $request['name'],
             'email' => $request['email']
         ]);
+
+        if ($status) {
+            $alert = $this->updateUserSuccessAlert();
+        } else {
+            $alert = $this->unknownErrorAlert();
+        }
+
+        return $alert;
     }
 
-    public function trashUser($user)
+    public function trashUser($id)
     {
-        return $user->delete();
+        $user = $this->findTrashedUser($id);
+        $status = $user->delete();
+        if ($status) {
+            $alert = $this->trashUserSuccessAlert();
+        } else {
+            $alert = $this->unknownErrorAlert();
+        }
+        return $alert;
     }
 
     public function getTrashedUsers()
@@ -71,14 +94,28 @@ class UserService
         return User::withTrashed()->findOrFail($id);
     }
 
-    public function forceDeleteUser($user)
+    public function forceDeleteUser($id)
     {
-        return $user->forceDelete();
+        $user = $this->findTrashedUser($id);
+        $status = $user->forceDelete();
+        if ($status) {
+            $alert = $this->deleteUserSuccessAlert();
+        } else {
+            $alert = $this->unknownErrorAlert();
+        }
+        return $alert;
     }
 
-    public function restoreUser($user)
+    public function restoreUser($id)
     {
-        return $user->restore();
+        $user = $this->findTrashedUser($id);
+        $status = $user->restore();
+        if ($status) {
+            $alert = $this->deleteUserSuccessAlert();
+        } else {
+            $alert = $this->unknownErrorAlert();
+        }
+        return $alert;
     }
 
     public function unknownErrorAlert()
