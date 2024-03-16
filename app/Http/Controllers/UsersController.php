@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Hash;
 
 class UsersController extends Controller
 {
+    private $user_service;
+
+    public function __construct(UserService $user_service)
+    {
+        $this->user_service = $user_service;
+    }
+
     public function index()
     {
-        $data['users'] = User::where('id', '!=', auth()->id())->paginate(10);
+        $data['users'] = (new UserService())->getUsers();
         $data['heading'] = 'Dashboard';
         return view('users.dashboard', $data);
     }
@@ -22,9 +27,9 @@ class UsersController extends Controller
         $data['heading'] = 'Edit User';
 
         try {
-            $data['user'] = User::find($id);
+            $data['user'] = $this->user_service->findUser($id);
         } catch (\Throwable $th) {
-            Log::error($th->getMessage());
+            $this->user_service->logForException($th, 'EDIT_USER');
         }
         return view('users.edit', $data);
     }
@@ -34,9 +39,9 @@ class UsersController extends Controller
         $data['heading'] = 'User Details';
 
         try {
-            $data['user'] = User::find($id);
+            $data['user'] = $this->user_service->findUser($id);
         } catch (\Throwable $th) {
-            Log::error($th->getMessage());
+            $this->user_service->logForException($th, 'USER_DETAILS');
         }
         return view('users.details', $data);
     }
@@ -56,19 +61,14 @@ class UsersController extends Controller
         ]);
 
         try {
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
+            $alert = $this->user_service->unknownErrorAlert();
+            $user = $this->user_service->createUser($request->all());
+
             if ($user) {
-                $alert['message'] = "User created successfully";
-                $alert['color'] = 'green';
+                $alert = $this->user_service->storeUserSuccessAlert();
             }
         } catch (\Throwable $th) {
-            Log::error($th->getMessage());
-            $alert['message'] = "Something went wrong";
-            $alert['color'] = 'red';
+            $this->user_service->logForException($th, 'STORE_USER');
         }
 
         return redirect()->route('dashboard')->with('alert', $alert);
@@ -82,19 +82,15 @@ class UsersController extends Controller
         ]);
 
         try {
-            $user = User::find($request->id);
-            if (!empty($user)) {
-                $user->update([
-                    'name' => $request->name,
-                    'email' => $request->email
-                ]);
+            $alert = $this->user_service->unknownErrorAlert();
+            $user = $this->user_service->findUser($request->id);
+
+            $status = $this->user_service->updateUser($request->all(), $user);
+            if ($status) {
+                $alert = $this->user_service->updateUserSuccessAlert();
             }
-            $alert['message'] = "User updated successfully";
-            $alert['color'] = 'green';
         } catch (\Throwable $th) {
-            Log::error($th->getMessage());
-            $alert['message'] = "Something went wrong";
-            $alert['color'] = 'red';
+            $this->user_service->logForException($th, 'UPDATE_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
     }
@@ -102,18 +98,15 @@ class UsersController extends Controller
     public function trash($id)
     {
         try {
-            $user = User::find($id);
-            $alert['message'] = "User not found";
-            $alert['color'] = 'red';
+            $user = (new UserService())->findUser($id);
+            $alert = $this->user_service->unknownErrorAlert();
 
-            if (!empty($user)) {
-                $user->delete();
-                $alert['message'] = "User moved to trash successfully";
-                $alert['color'] = 'green';
+            $status = $this->user_service->trashUser($user);
+            if ($status) {
+                $alert = $this->user_service->trashUserSuccessAlert();
             }
         } catch (\Throwable $th) {
-            Log::error($th->getMessage());
-            $alert['message'] = "Something went wrong";
+            $this->user_service->logForException($th, 'TRASH_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
     }
@@ -122,9 +115,9 @@ class UsersController extends Controller
     {
         $data['heading'] = 'Trashed Users';
         try {
-            $data['trashed'] = User::onlyTrashed()->paginate(10);
+            $data['trashed'] = $this->user_service->getTrashedUsers();
         } catch (\Throwable $th) {
-            Log::error($th->getMessage());
+            $this->user_service->logForException($th, 'TRASH_LIST');
         }
         return view('users.trashed', $data);
     }
@@ -132,18 +125,16 @@ class UsersController extends Controller
     public function delete($id)
     {
         try {
-            $user = User::withTrashed()->find($id);
-            $alert['message'] = "User not found";
-            $alert['color'] = 'red';
+            $user = $this->user_service->findTrashedUser($id);
+            $alert = $this->user_service->unknownErrorAlert();
 
-            if (!empty($user)) {
-                $user->forceDelete();
-                $alert['message'] = "User deleted successfully";
-                $alert['color'] = 'green';
+            $status = $this->user_service->forceDeleteUser($user);
+            if ($status) {
+                $alert = $this->user_service->deleteUserSuccessAlert();
             }
+
         } catch (\Throwable $th) {
-            Log::error($th->getMessage());
-            $alert['message'] = "Something went wrong";
+            $this->user_service->logForException($th, 'DELETE_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
     }
@@ -151,18 +142,16 @@ class UsersController extends Controller
     public function restore($id)
     {
         try {
-            $alert['message'] = "User not found";
-            $alert['color'] = 'red';
+            $alert = $this->user_service->unknownErrorAlert();
+            $user = $this->user_service->findTrashedUser($id);
 
-            $user = User::withTrashed()->find($id);
-            if (!empty($user)) {
-                $user->restore();
-                $alert['message'] = "User restored successfully";
-                $alert['color'] = 'green';
+            $status = $this->user_service->restoreUser($user);
+            if ($status) {
+                $alert = $this->user_service->restoreUserSuccessAlert();
             }
+
         } catch (\Throwable $th) {
-            Log::error($th->getMessage());
-            $alert['message'] = "Something went wrong";
+            $this->user_service->logForException($th, 'RESTORE_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
     }
