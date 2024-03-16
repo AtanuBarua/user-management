@@ -12,7 +12,7 @@ class UsersController extends Controller
 {
     public function index()
     {
-        $data['users'] = User::paginate(10);
+        $data['users'] = User::where('id', '!=', auth()->id())->paginate(10);
         $data['heading'] = 'Dashboard';
         return view('users.dashboard', $data);
     }
@@ -99,7 +99,7 @@ class UsersController extends Controller
         return redirect()->route('dashboard')->with('alert', $alert);
     }
 
-    public function delete($id)
+    public function trash($id)
     {
         try {
             $user = User::find($id);
@@ -108,10 +108,58 @@ class UsersController extends Controller
 
             if (!empty($user)) {
                 $user->delete();
+                $alert['message'] = "User moved to trash successfully";
+                $alert['color'] = 'green';
+            }
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            $alert['message'] = "Something went wrong";
+        }
+        return redirect()->route('dashboard')->with('alert', $alert);
+    }
+
+    public function trashList()
+    {
+        $data['heading'] = 'Trashed Users';
+        try {
+            $data['trashed'] = User::onlyTrashed()->paginate(10);
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+        }
+        return view('users.trashed', $data);
+    }
+
+    public function delete($id)
+    {
+        try {
+            $user = User::withTrashed()->find($id);
+            $alert['message'] = "User not found";
+            $alert['color'] = 'red';
+
+            if (!empty($user)) {
+                $user->forceDelete();
                 $alert['message'] = "User deleted successfully";
                 $alert['color'] = 'green';
             }
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            $alert['message'] = "Something went wrong";
+        }
+        return redirect()->route('dashboard')->with('alert', $alert);
+    }
 
+    public function restore($id)
+    {
+        try {
+            $alert['message'] = "User not found";
+            $alert['color'] = 'red';
+
+            $user = User::withTrashed()->find($id);
+            if (!empty($user)) {
+                $user->restore();
+                $alert['message'] = "User restored successfully";
+                $alert['color'] = 'green';
+            }
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
             $alert['message'] = "Something went wrong";

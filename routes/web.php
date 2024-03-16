@@ -26,7 +26,11 @@ Route::middleware('auth', 'verified')->group(function() {
     Route::get('/create', [ UsersController::class, 'create' ])->name('user.create');
     Route::post('/store', [ UsersController::class, 'store' ])->name('user.store');
     Route::post('/update', [ UsersController::class, 'update' ])->name('user.update');
+    Route::delete('/trash/{id}', [ UsersController::class, 'trash' ])->name('user.trash');
+    Route::get('/trashList', [ UsersController::class, 'trashList' ])->name('user.trashList');
     Route::delete('/delete/{id}', [ UsersController::class, 'delete' ])->name('user.delete');
+    Route::post('/restore/{id}', [ UsersController::class, 'restore' ])->name('user.restore');
+
 });
 
 Route::middleware('auth')->group(function () {
