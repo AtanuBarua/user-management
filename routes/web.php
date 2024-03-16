@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,9 +19,15 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::middleware('auth', 'verified')->group(function() {
+    Route::get('/dashboard', [ UsersController::class, 'index' ])->name('dashboard');
+    Route::get('/edit/{id}', [ UsersController::class, 'edit' ])->name('user.edit');
+    Route::get('/user/{id}', [ UsersController::class, 'show' ])->name('user.user');
+    Route::get('/create', [ UsersController::class, 'create' ])->name('user.create');
+    Route::post('/store', [ UsersController::class, 'store' ])->name('user.store');
+    Route::post('/update', [ UsersController::class, 'update' ])->name('user.update');
+    Route::delete('/delete/{id}', [ UsersController::class, 'delete' ])->name('user.delete');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
