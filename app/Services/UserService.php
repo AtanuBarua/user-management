@@ -2,13 +2,17 @@
 
 namespace App\Services;
 
+use App\Interface\UserServiceInterface;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
-class UserService
+class UserService implements UserServiceInterface
 {
-    public function getUsers($withoutSelf = true)
+    private $status_code;
+    private $status_message;
+
+    public function getUsers($withoutSelf = false)
     {
         if ($withoutSelf) {
             $users = User::where('id', '!=', auth()->id())->paginate(10);
@@ -29,11 +33,12 @@ class UserService
         $data = $this->prepareStoreData($request);
         $status = User::create($data);
         if ($status) {
-            $alert = $this->storeUserSuccessAlert();
+            $this->status_code = 200;
+            $this->status_message = 'User created successfully';
         } else {
-            $alert = $this->unknownErrorAlert();
+            $this->unknownError();
         }
-        return $alert;
+        return [$this->status_code, $this->status_message];
     }
 
     public function prepareStoreData($request)
@@ -64,12 +69,13 @@ class UserService
         ]);
 
         if ($status) {
-            $alert = $this->updateUserSuccessAlert();
+            $this->status_code = 200;
+            $this->status_message = 'User updated successfully';
         } else {
-            $alert = $this->unknownErrorAlert();
+            $this->unknownError();
         }
 
-        return $alert;
+        return [$this->status_code, $this->status_message];
     }
 
     public function trashUser($id)
@@ -77,11 +83,12 @@ class UserService
         $user = $this->findTrashedUser($id);
         $status = $user->delete();
         if ($status) {
-            $alert = $this->trashUserSuccessAlert();
+            $this->status_code = 200;
+            $this->status_message = 'User moved to trash successfully';
         } else {
-            $alert = $this->unknownErrorAlert();
+            $this->unknownError();
         }
-        return $alert;
+        return [$this->status_code, $this->status_message];
     }
 
     public function getTrashedUsers()
@@ -99,11 +106,12 @@ class UserService
         $user = $this->findTrashedUser($id);
         $status = $user->forceDelete();
         if ($status) {
-            $alert = $this->deleteUserSuccessAlert();
+            $this->status_code = 200;
+            $this->status_message = 'User deleted successfully';
         } else {
-            $alert = $this->unknownErrorAlert();
+            $this->unknownError();
         }
-        return $alert;
+        return [$this->status_code, $this->status_message];
     }
 
     public function restoreUser($id)
@@ -111,52 +119,17 @@ class UserService
         $user = $this->findTrashedUser($id);
         $status = $user->restore();
         if ($status) {
-            $alert = $this->deleteUserSuccessAlert();
+            $this->status_code = 200;
+            $this->status_message = 'User restored successfully';
         } else {
-            $alert = $this->unknownErrorAlert();
+            $this->unknownError();
         }
-        return $alert;
+        return [$this->status_code, $this->status_message];
     }
 
-    public function unknownErrorAlert()
+    public function unknownError()
     {
-        $alert['message'] = "Something went wrong";
-        $alert['color'] = User::ALERT_ERROR;
-        return $alert;
-    }
-
-    public function storeUserSuccessAlert()
-    {
-        $alert['message'] = "User created successfully";
-        $alert['color'] = User::ALERT_SUCCESS;
-        return $alert;
-    }
-
-    public function updateUserSuccessAlert()
-    {
-        $alert['message'] = "User updated successfully";
-        $alert['color'] = User::ALERT_SUCCESS;
-        return $alert;
-    }
-
-    public function trashUserSuccessAlert()
-    {
-        $alert['message'] = "User moved to trash successfully";
-        $alert['color'] = User::ALERT_SUCCESS;
-        return $alert;
-    }
-
-    public function deleteUserSuccessAlert()
-    {
-        $alert['message'] = "User deleted successfully";
-        $alert['color'] = User::ALERT_SUCCESS;
-        return $alert;
-    }
-
-    public function restoreUserSuccessAlert()
-    {
-        $alert['message'] = "User restored successfully";
-        $alert['color'] = User::ALERT_SUCCESS;
-        return $alert;
+        $this->status_code = 500;
+        $this->status_message = 'Something went wrong';
     }
 }

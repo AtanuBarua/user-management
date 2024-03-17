@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            @if ((session()->has('alert')))
+            @if (!empty(session()->get('alert')['color']) && !empty(session()->get('alert')['message']))
             <div class="flex items-center p-4 mb-4 text-sm text-{{ session()->get('alert')['color'] }}-800 rounded-lg bg-{{ session()->get('alert')['color'] }}-50 dark:bg-gray-800 dark:text-{{ session()->get('alert')['color'] }}-400"
                 role="alert">
                 <svg class="flex-shrink-0 inline w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"

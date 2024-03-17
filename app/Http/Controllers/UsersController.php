@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\UserService;
+use App\Interface\UserServiceInterface;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -10,14 +11,14 @@ class UsersController extends Controller
 {
     private $user_service;
 
-    public function __construct(UserService $user_service)
+    public function __construct(UserServiceInterface $user_service)
     {
         $this->user_service = $user_service;
     }
 
     public function index()
     {
-        $data['users'] = $this->user_service->getUsers();
+        $data['users'] = $this->user_service->getUsers(true);
         $data['heading'] = 'Dashboard';
         return view('users.dashboard', $data);
     }
@@ -61,9 +62,10 @@ class UsersController extends Controller
         ]);
 
         try {
-            $alert = $this->user_service->createUser($request->all());
+            list($code, $message) = $this->user_service->createUser($request->all());
+            $alert = $this->getAlert($code, $message);
         } catch (\Throwable $th) {
-            $alert = $this->user_service->unknownErrorAlert();
+            $alert = $this->getAlert();
             $this->user_service->logForException($th, 'STORE_USER');
         }
 
@@ -78,9 +80,10 @@ class UsersController extends Controller
         ]);
 
         try {
-            $alert = $this->user_service->updateUser($request->all(), $request->id);
+            list($code, $message) = $this->user_service->updateUser($request->all(), $request->id);
+            $alert = $this->getAlert($code, $message);
         } catch (\Throwable $th) {
-            $alert = $this->user_service->unknownErrorAlert();
+            $alert = $this->getAlert();
             $this->user_service->logForException($th, 'UPDATE_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
@@ -89,9 +92,10 @@ class UsersController extends Controller
     public function trash($id)
     {
         try {
-            $alert = $this->user_service->trashUser($id);
+            list($code, $message) = $this->user_service->trashUser($id);
+            $alert = $this->getAlert($code, $message);
         } catch (\Throwable $th) {
-            $alert = $this->user_service->unknownErrorAlert();
+            $alert = $this->getAlert();
             $this->user_service->logForException($th, 'TRASH_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
@@ -111,9 +115,10 @@ class UsersController extends Controller
     public function delete($id)
     {
         try {
-            $alert = $this->user_service->forceDeleteUser($id);
+            list($code, $message) = $this->user_service->forceDeleteUser($id);
+            $alert = $this->getAlert($code, $message);
         } catch (\Throwable $th) {
-            $alert = $this->user_service->unknownErrorAlert();
+            $alert = $this->getAlert();
             $this->user_service->logForException($th, 'DELETE_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
@@ -122,11 +127,25 @@ class UsersController extends Controller
     public function restore($id)
     {
         try {
-            $alert = $this->user_service->restoreUser($id);
+            list($code, $message) = $this->user_service->restoreUser($id);
+            $alert = $this->getAlert($code, $message);
         } catch (\Throwable $th) {
-            $alert = $this->user_service->unknownErrorAlert();
+            $alert = $this->getAlert();
             $this->user_service->logForException($th, 'RESTORE_USER');
         }
         return redirect()->route('dashboard')->with('alert', $alert);
+    }
+
+    private function getAlert($code = 500, $message = 'Something went wrong')
+    {
+        $alert['message'] = $message;
+        $alert['color'] = User::ALERT_ERROR;
+        if (!empty($code)) {
+            if ($code < 400) {
+                $alert['color'] = User::ALERT_SUCCESS;
+            }
+        }
+
+        return $alert;
     }
 }
