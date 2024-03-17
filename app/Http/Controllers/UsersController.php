@@ -57,7 +57,7 @@ class UsersController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
-            'email' => 'required|email|' . Rule::unique('users')->ignore($request->id),
+            'email' => 'required|email|' . Rule::unique('users'),
             'password' => 'required|confirmed|min:8',
         ]);
 
