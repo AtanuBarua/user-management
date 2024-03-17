@@ -12,12 +12,12 @@ class UserService implements UserServiceInterface
     private $status_code;
     private $status_message;
 
-    public function getUsers($withoutSelf = false)
+    public function getUsers($withSelf = true)
     {
-        if ($withoutSelf) {
-            $users = User::where('id', '!=', auth()->id())->paginate(10);
-        } else {
+        if ($withSelf) {
             $users = User::paginate(10);
+        } else {
+            $users = User::where('id', '!=', auth()->id())->paginate(10);
         }
 
         return $users;

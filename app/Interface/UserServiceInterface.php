@@ -4,7 +4,7 @@ namespace App\Interface;
 
 interface UserServiceInterface
 {
-    public function getUsers($withoutSelf = false);
+    public function getUsers($withSelf = true);
 
     public function findUser($id);
 

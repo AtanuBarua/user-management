@@ -18,7 +18,7 @@ class UsersController extends Controller
 
     public function index()
     {
-        $data['users'] = $this->user_service->getUsers(true);
+        $data['users'] = $this->user_service->getUsers(false);
         $data['heading'] = 'Dashboard';
         return view('users.dashboard', $data);
     }
