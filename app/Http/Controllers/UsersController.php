@@ -121,7 +121,7 @@ class UsersController extends Controller
             $alert = $this->getAlert();
             $this->user_service->logForException($th, 'DELETE_USER');
         }
-        return redirect()->route('dashboard')->with('alert', $alert);
+        return redirect()->route('user.trashList')->with('alert', $alert);
     }
 
     public function restore($id)

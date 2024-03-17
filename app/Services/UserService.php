@@ -80,7 +80,7 @@ class UserService implements UserServiceInterface
 
     public function trashUser($id)
     {
-        $user = $this->findTrashedUser($id);
+        $user = $this->findUser($id);
         $status = $user->delete();
         if ($status) {
             $this->status_code = 200;
@@ -98,7 +98,7 @@ class UserService implements UserServiceInterface
 
     public function findTrashedUser($id)
     {
-        return User::withTrashed()->findOrFail($id);
+        return User::onlyTrashed()->findOrFail($id);
     }
 
     public function forceDeleteUser($id)
