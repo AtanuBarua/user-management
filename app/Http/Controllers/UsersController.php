@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UserStoreRequest;
+use App\Http\Requests\UserUpdateRequest;
 use App\Interface\UserServiceInterface;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use DB;
 
 class UsersController extends Controller
@@ -55,14 +56,8 @@ class UsersController extends Controller
         return view('users.add', $data);
     }
 
-    public function store(Request $request)
+    public function store(UserStoreRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|' . Rule::unique('users'),
-            'password' => 'required|confirmed|min:8',
-        ]);
-
         try {
             DB::beginTransaction();
             list($code, $message) = $this->user_service->createUser($request->all());
@@ -77,13 +72,8 @@ class UsersController extends Controller
         return redirect()->route('dashboard')->with('alert', $alert);
     }
 
-    public function update(Request $request)
+    public function update(UserUpdateRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|' . Rule::unique('users')->ignore($request->id)
-        ]);
-
         try {
             list($code, $message) = $this->user_service->updateUser($request->all(), $request->id);
             $alert = $this->getAlert($code, $message);
