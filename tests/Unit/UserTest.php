@@ -17,6 +17,7 @@ class UserTest extends TestCase
             'email_verified_at' => now(),
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
             'remember_token' => Str::random(10),
+            'address' => [fake()->address()]
         ];
 
         $response = (new UserService())->createUser($data);
@@ -39,7 +40,8 @@ class UserTest extends TestCase
         $user = $this->createUser();
         $updatedData = [
             'name' => 'updated name',
-            'email' => $user->email
+            'email' => $user->email,
+            'address' => [fake()->address()]
         ];
         $response = (new UserService())->updateUser($updatedData, $user->id);
         $this->assertSame(200, $response[0]);
