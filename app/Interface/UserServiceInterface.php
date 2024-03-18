@@ -10,7 +10,7 @@ interface UserServiceInterface
 
     public function createUser($request);
 
-    public function prepareStoreData($request);
+    // public function prepareStoreData($request);
 
     public function updateUser($request, $id);
 

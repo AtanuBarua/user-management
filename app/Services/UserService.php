@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\UserCreatedOrUpdated;
 use App\Interface\UserServiceInterface;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -30,24 +31,29 @@ class UserService implements UserServiceInterface
 
     public function createUser($request)
     {
-        $data = $this->prepareStoreData($request);
-        $status = User::create($data);
+        $user = new User();
+        $user->name = $request['name'];
+        $user->email = $request['email'];
+        $user->password = Hash::make($request['password']);
+        $status = $user->save();
+
         if ($status) {
             $this->status_code = 200;
             $this->status_message = 'User created successfully';
+            event(new UserCreatedOrUpdated($user->id, $request['address']));
         } else {
             $this->unknownError();
         }
         return [$this->status_code, $this->status_message];
     }
 
-    public function prepareStoreData($request)
-    {
-        $data['name'] = $request['name'];
-        $data['email'] = $request['email'];
-        $data['password'] = Hash::make($request['password']);
-        return $data;
-    }
+    // public function prepareStoreData($request)
+    // {
+    //     $data['name'] = $request['name'];
+    //     $data['email'] = $request['email'];
+    //     $data['password'] = Hash::make($request['password']);
+    //     return $data;
+    // }
 
     public function logForException($th, $action = 'action')
     {
@@ -69,6 +75,7 @@ class UserService implements UserServiceInterface
         ]);
 
         if ($status) {
+            event(new UserCreatedOrUpdated($id, $request['address']));
             $this->status_code = 200;
             $this->status_message = 'User updated successfully';
         } else {

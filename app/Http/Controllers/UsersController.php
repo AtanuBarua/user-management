@@ -6,6 +6,7 @@ use App\Interface\UserServiceInterface;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use DB;
 
 class UsersController extends Controller
 {
@@ -29,6 +30,7 @@ class UsersController extends Controller
 
         try {
             $data['user'] = $this->user_service->findUser($id);
+            $data['addresses'] = $data['user']->addresses()->get();
         } catch (\Throwable $th) {
             $this->user_service->logForException($th, 'EDIT_USER');
         }
@@ -62,9 +64,12 @@ class UsersController extends Controller
         ]);
 
         try {
+            DB::beginTransaction();
             list($code, $message) = $this->user_service->createUser($request->all());
+            DB::commit();
             $alert = $this->getAlert($code, $message);
         } catch (\Throwable $th) {
+            DB::rollback();
             $alert = $this->getAlert();
             $this->user_service->logForException($th, 'STORE_USER');
         }
@@ -133,7 +138,7 @@ class UsersController extends Controller
             $alert = $this->getAlert();
             $this->user_service->logForException($th, 'RESTORE_USER');
         }
-        return redirect()->route('dashboard')->with('alert', $alert);
+        return redirect()->route('user.trashList')->with('alert', $alert);
     }
 
     private function getAlert($code = 500, $message = 'Something went wrong')
