@@ -27,7 +27,7 @@ class UserStoreRequest extends FormRequest
             'email' => 'required|email|' . Rule::unique('users'),
             'password' => 'required|confirmed|min:8',
             'address' => 'required|array',
-            'address.*' => 'string'
+            'address.*' => 'required'
         ];
     }
 }
