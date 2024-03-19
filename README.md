@@ -3,3 +3,5 @@
 <p>php artisan key:generate</p>
 <p>npm install</p>
 <p>npm run dev</p>
+<p>run unit test:</p>
+<p>php artisan test --testsuite=Unit</p>
